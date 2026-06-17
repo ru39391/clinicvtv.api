@@ -1,6 +1,6 @@
 <?php
 
-namespace Zoomx\Controllers\Api\Position;
+namespace Zoomx\Controllers\Api\Example;
 
 use Zoomx\Controllers\Common\UpdateController as CommonUpdateController;
 
