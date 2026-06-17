@@ -4,15 +4,17 @@ namespace Zoomx\Controllers\Common;
 
 use Zoomx\Controllers\BaseController;
 use Zoomx\Controllers\Common\CommonTrait;
+use Zoomx\Controllers\Common\RequestParamsTrait;
 use Zoomx\Controllers\Common\Constants;
 
 class GetController extends BaseController
 {
-  use CommonTrait;
+  use CommonTrait, RequestParamsTrait;
 
-  protected function getItems($class, $id = null, $page = 1, $perPage = 6, $sortby = 'id', $sortdir = 'DESC', $search = null)
+  protected function getItems($class, $id = null)
   {
     $output = [];
+    $params = $this->getValidPaginationParams();
 
     if ($id) {
       $data = $this->modx->getObject($class, array('id' => $id));
@@ -26,19 +28,19 @@ class GetController extends BaseController
 
       $output = $this->formatData($data->toArray());
     } else {
-      $page = max(1, (int)$page);
-      $perPage = max(1, min(100, (int)$perPage));
+      $page = $params['page'];
+      $perPage = $params['perPage'];
       $totalQuery = $this->modx->newQuery($class);
 
-      if (!empty($search)) {
-        $search = trim($search);
+      if (!empty($params['search'])) {
+        $search = trim($params['search']);
         $totalQuery->where([
           'name:LIKE' => '%' . $search . '%'
         ]);
       }
 
       $totalCount = $this->modx->getCount($class, $totalQuery);
-      $totalQuery->sortby($sortby, $sortdir);
+      $totalQuery->sortby($params['sortby'], $params['sortdir']);
       $totalQuery->limit($perPage, ($page - 1) * $perPage);
       $data = $this->modx->getCollection($class, $totalQuery);
 
@@ -56,8 +58,8 @@ class GetController extends BaseController
           'totalCount' => $totalCount,
           'totalPages' => $totalPages,
           'data' => $items,
-          'sortby' => $sortby,
-          'sortdir' => $sortdir,
+          'sortby' => $params['sortby'],
+          'sortdir' => $params['sortdir'],
           'search' => $search ?: null
         ]
       ];
