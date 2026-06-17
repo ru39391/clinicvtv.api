@@ -3,9 +3,10 @@
 /** @var modX  $modx */
 
 $router->get('api/team', Zoomx\Controllers\Api\Team\GetController::class);
+$router->get('api/team/{dept_id}', Zoomx\Controllers\Api\Team\GetController::class);
 
 $routes = [
-  'exaples' => 'Example',
+  'examples' => 'Example',
   'pricelist' => 'Price',
   'testimonials' => 'Testimonial',
 ];

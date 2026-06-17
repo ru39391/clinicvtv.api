@@ -68,7 +68,7 @@ class GetController extends CommonGetController
     );
   }
 
-  public function index($id = null)
+  public function index($dept_id = null)
   {
     $output = [];
     $class = \modResource::class;
@@ -93,6 +93,11 @@ class GetController extends CommonGetController
           'url' => $data['uri']
         ]
       );
+    }
+
+    if ($dept_id !== null) {
+      $output = array_filter($output, fn($item) => isset($item['depts_id']) && in_array($dept_id, $item['depts_id']));
+      $output = array_values($output);
     }
 
     ['headers' => $headers, 'code' => $code] = $this->setResponseHeaders();
