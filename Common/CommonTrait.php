@@ -61,6 +61,20 @@ trait CommonTrait
     return $value->format('Y-m-d\TH:i:00\Z');
   }
 
+  public function handleThums($pic)
+  {
+    return [
+      'webp' => $this->modx->runSnippet('pthumb', [
+        'input' => $pic,
+        'options' => 'q=100&h=340&f=webp'
+      ]),
+      'thumb' => $this->modx->runSnippet('pthumb', [
+        'input' => $pic,
+        'options' => 'q=100&h=340'
+      ]),
+    ];
+  }
+
   public function formatData($data)
   {
     $updatedon = $data[Constants::UPDATEDON_KEY];
@@ -77,12 +91,12 @@ trait CommonTrait
       $data[Constants::UPDATEDON_KEY] = $updatedon === null ? $updatedon : $this->formatDate($updatedon);
     }
 
-    if (isset($data['credentials']) && is_string($data['credentials'])) {
-        $decoded = json_decode($data['credentials'], true);
+    if (isset($data[Constants::AFTER_PIC_KEY])) {
+      $data[Constants::AFTER_PIC_KEY] = $this->handleThums($data[Constants::AFTER_PIC_KEY]);
+    }
 
-        if (json_last_error() === JSON_ERROR_NONE) {
-            $data['credentials'] = $decoded;
-        }
+    if (isset($data[Constants::BEFORE_PIC_KEY])) {
+      $data[Constants::BEFORE_PIC_KEY] = $this->handleThums($data[Constants::BEFORE_PIC_KEY]);
     }
 
     return $data;

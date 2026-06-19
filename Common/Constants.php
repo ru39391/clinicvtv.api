@@ -13,6 +13,8 @@ class Constants
   const CREATEDON_KEY = 'createdAt';
   const UPDATEDON_KEY = 'updatedAt';
   const RATING_KEY = 'rating';
+  const AFTER_PIC_KEY = 'img_after';
+  const BEFORE_PIC_KEY = 'img_before';
 
   const WORKFLOW_KEYS = [
     Constants::NAME_KEY,

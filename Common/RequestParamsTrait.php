@@ -11,6 +11,7 @@ trait RequestParamsTrait
   protected function getPaginationParams(): array
   {
     return [
+      'all' => (int)($this->getParam('all', 0)),
       'page' => (int)($this->getParam('page', 1)),
       'perPage' => (int)($this->getParam('perPage', 10)),
       'sortby' => $this->getParam('sortby', 'id'),
@@ -22,7 +23,7 @@ trait RequestParamsTrait
   protected function getValidPaginationParams(): array
   {
     $params = $this->getPaginationParams();
-    $params['page'] = max(1, $params['page']);
+    $params['page'] = $params['all'] === 1 ? 1 : max(1, $params['page']);
     $params['perPage'] = max(1, min(100, $params['perPage']));
 
     return $params;

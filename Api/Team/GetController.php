@@ -40,11 +40,11 @@ class GetController extends CommonGetController
       $output['pics'] = [
         'webp' => $this->modx->runSnippet('pthumb', [
           'input' => $pics,
-          'options' => 'q=100&h=470'
+          'options' => 'q=100&h=470&f=webp'
         ]),
         'thumb' => $this->modx->runSnippet('pthumb', [
           'input' => $pics,
-          'options' => 'q=100&h=470&f=webp'
+          'options' => 'q=100&h=470'
         ]),
       ];
 
