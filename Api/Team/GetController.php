@@ -25,7 +25,9 @@ class GetController extends CommonGetController
 
   protected function handleProps($props): array
   {
-    $output = [];
+    $output = [
+      'depts_id' => []
+    ];
 
     if (!is_array($props) || empty($props)) {
       return $output;
@@ -33,19 +35,18 @@ class GetController extends CommonGetController
 
     if (isset($props[1]['tvs']) && is_array($props[1]['tvs'])) {
       $tvs = $props[1]['tvs'];
+      $pics = isset($tvs['tv_img']) ? $tvs['tv_img'] : $this->modx->getOption('default_team_nophoto');
 
-      if (isset($tvs['tv_img'])) {
-        $output['pics'] = [
-          'webp' => $this->modx->runSnippet('pthumb', [
-            'input' => $tvs['tv_img'],
-            'options' => 'q=100&h=265'
-          ]),
-          'thumb' => $this->modx->runSnippet('pthumb', [
-            'input' => $tvs['tv_img'],
-            'options' => 'q=100&h=265&f=webp'
-          ]),
-        ];
-      }
+      $output['pics'] = [
+        'webp' => $this->modx->runSnippet('pthumb', [
+          'input' => $pics,
+          'options' => 'q=100&h=470'
+        ]),
+        'thumb' => $this->modx->runSnippet('pthumb', [
+          'input' => $pics,
+          'options' => 'q=100&h=470&f=webp'
+        ]),
+      ];
 
       if (isset($tvs['tv_dept'])) {
         $depts = $this->modx->runSnippet('handleCategoryData', [
