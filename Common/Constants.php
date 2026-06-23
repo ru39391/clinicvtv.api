@@ -15,13 +15,8 @@ class Constants
   const RATING_KEY = 'rating';
   const AFTER_PIC_KEY = 'img_after';
   const BEFORE_PIC_KEY = 'img_before';
-
-  const WORKFLOW_KEYS = [
-    Constants::NAME_KEY,
-    Constants::DATA_KEY,
-    Constants::IS_ACTIVE_KEY,
-    Constants::CREATEDON_KEY
-  ];
+  const SPEC_ID_KEY = 'spec_id';
+  const INTROTEXT_KEY = 'introtext';
 
   const ALLOWED_ORIGINS = [
     'http://localhost:5173',

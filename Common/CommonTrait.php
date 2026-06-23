@@ -75,6 +75,13 @@ trait CommonTrait
     ];
   }
 
+  public function getPagetitle($id)
+  {
+    $res = $this->modx->getObject(\modResource::class, $id);
+
+    return $res->pagetitle;
+  }
+
   public function formatData($data)
   {
     $updatedon = $data[Constants::UPDATEDON_KEY];
@@ -97,6 +104,10 @@ trait CommonTrait
 
     if (isset($data[Constants::BEFORE_PIC_KEY])) {
       $data[Constants::BEFORE_PIC_KEY] = $this->handleThums($data[Constants::BEFORE_PIC_KEY]);
+    }
+
+    if (isset($data[Constants::SPEC_ID_KEY])) {
+      $data[Constants::INTROTEXT_KEY] = $this->getPagetitle($data[Constants::SPEC_ID_KEY]);
     }
 
     return $data;
