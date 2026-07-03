@@ -14,6 +14,9 @@ $routes = [
 $methods = [
   'get' => 'GetController',
   'post' => 'CreateController',
+];
+
+$ext_methods = [
   'patch' => 'UpdateController',
   'delete' => 'DeleteController'
 ];
@@ -21,5 +24,9 @@ $methods = [
 foreach ($routes as $key => $value) {
   foreach ($methods as $method => $controller) {
     $router->{$method}("api/{$key}", "Zoomx\\Controllers\\Api\\$value\\$controller");
+  }
+
+  foreach ($ext_methods as $method => $controller) {
+    $router->{$method}("api/{$key}/{id}", "Zoomx\\Controllers\\Api\\$value\\$controller");
   }
 }

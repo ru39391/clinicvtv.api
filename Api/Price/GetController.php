@@ -17,12 +17,13 @@ class GetController extends CommonGetController
     $where = [
       'dept_id' => (int)($this->getParam('dept_id', 0))
     ];
+    $is_hidden = $this->getParam('is_hidden');
 
     return $this->getItems(
       $class,
       $id,
       array_merge(
-        ['is_hidden' => (int)($this->getParam('is_hidden', 0))],
+        $is_hidden === 'all' ? [] : ['is_hidden' => (int)($this->getParam('is_hidden', 0))],
         array_filter($where, fn($item) => $item !== 0)
       )
     );

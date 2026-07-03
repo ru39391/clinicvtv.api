@@ -16,7 +16,7 @@ class CreateController extends CommonController
 
     $response = $this->modx->newObject(
       $class,
-      array_merge($data, [Constants::CREATEDON_KEY => date('Y-m-d H:i:s'), Constants::UPDATEDON_KEY => null])
+      array_merge($data, [Constants::CREATEDON_KEY => date('Y-m-d H:i:s'), Constants::UPDATEDON_KEY => date('Y-m-d H:i:s')])
     );
 
     if ($response->save()) {
