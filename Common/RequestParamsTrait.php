@@ -1,5 +1,6 @@
 <?php
 namespace Zoomx\Controllers\Common;
+use Zoomx\Controllers\Common\Constants;
 
 trait RequestParamsTrait
 {
@@ -14,7 +15,7 @@ trait RequestParamsTrait
       'all' => (int)($this->getParam('all', 0)),
       'page' => (int)($this->getParam('page', 1)),
       'perPage' => (int)($this->getParam('perPage', 10)),
-      'sortby' => $this->getParam('sortby', 'id'),
+      'sortby' => $this->getParam('sortby', Constants::CREATEDON_KEY),
       'sortdir' => $this->getParam('sortdir', 'DESC'),
       'search' => $this->getParam('search', null),
     ];

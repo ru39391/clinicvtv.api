@@ -107,7 +107,7 @@ trait CommonTrait
     }
 
     if (isset($data[Constants::SPEC_ID_KEY])) {
-      $data[Constants::INTROTEXT_KEY] = $this->getPagetitle($data[Constants::SPEC_ID_KEY]);
+      $data[Constants::INTROTEXT_KEY] = $this->getPagetitle($data[Constants::SPEC_ID_KEY]) ?: '';
     }
 
     return $data;

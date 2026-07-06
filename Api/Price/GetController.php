@@ -3,6 +3,7 @@
 namespace Zoomx\Controllers\Api\Price;
 
 use Zoomx\Controllers\Common\GetController as CommonGetController;
+use Zoomx\Controllers\Common\Constants;
 use Zoomx\Controllers\Common\RequestParamsTrait;
 
 class GetController extends CommonGetController
@@ -14,16 +15,18 @@ class GetController extends CommonGetController
     $class = \pricelistItem::class;
     $this->modx->loadClass($class, $this->modx->getOption('core_path') . 'components/pricelist/model/pricelist/');
 
+    $is_hidden = $this->getParam(Constants::IS_HIDDEN_KEY);
     $where = [
-      'dept_id' => (int)($this->getParam('dept_id', 0))
+      Constants::DEPT_ID_KEY => (int)($this->getParam(Constants::DEPT_ID_KEY, 0))
     ];
-    $is_hidden = $this->getParam('is_hidden');
 
     return $this->getItems(
       $class,
       $id,
       array_merge(
-        $is_hidden === 'all' ? [] : ['is_hidden' => (int)($this->getParam('is_hidden', 0))],
+        $is_hidden === 'all'
+          ? []
+          : [Constants::IS_HIDDEN_KEY => (int)($this->getParam(Constants::IS_HIDDEN_KEY, 0))],
         array_filter($where, fn($item) => $item !== 0)
       )
     );
