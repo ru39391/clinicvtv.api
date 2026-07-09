@@ -16,13 +16,17 @@ class GetController extends CommonGetController
     $dir = $this->modx->getOption('default_exmpl_pics');
     $path = $this->modx->getOption('assets_path') . $dir;
     $exts = $this->getParam('exts', 'jpg,jpeg,png');
-    $sortby = $this->getParam('sortby', Constants::NAME_KEY);
-    $sortdir = $this->getParam('sortdir', 'ASC');
-    ['page' => $page, 'perPage' => $perPage] = $this->getValidPaginationParams();
+    $sortby = 'date';
+    [
+      'page' => $page,
+      'perPage' => $perPage,
+      'search' => $search,
+      'sortdir' => $sortdir
+    ] = $this->getValidPaginationParams();
 
     $output = [];
     $images = [];
-    $cacheKey = 'images_' . md5($path . $exts . $sortby . $sortdir . $page . $perPage . $all);
+    $cacheKey = 'images_' . md5($path . $exts . $sortby . $sortdir . $page . $perPage . $all. $search);
     $cached = $this->modx->cacheManager->get($cacheKey);
 
     if ($cached !== null) {
@@ -31,38 +35,40 @@ class GetController extends CommonGetController
       $result = [];
       $allowedExtensions = array_map('trim', explode(',', $exts));
       $allowedExtensions = array_map('strtolower', $allowedExtensions);
+      $extPattern = '/\.(' . implode('|', $allowedExtensions) . ')$/i';
+      $searchLower = strtolower(trim($search ?: ''));
 
       foreach (new \DirectoryIterator($path) as $file) {
-        if ($file->isFile()) {
-          $ext = strtolower($file->getExtension());
+        if ($file->isFile() && preg_match($extPattern, $file->getFilename())) {
+          $name = $file->getFilename();
+          $date = $file->getMTime();
 
-          if (in_array($ext, $allowedExtensions)) {
-            $name = $file->getFilename();
-            $date = $file->getMTime();
-            $image = [
-              Constants::NAME_KEY => $name,
-              'url' => 'assets/' . $dir . '/' . $name,
-              'size' => $file->getSize(),
-              'size_formatted' => $file->getSize() > 1048576
-                ? round($file->getSize() / 1048576, 2) . ' MB'
-                : round($file->getSize() / 1024, 2) . ' KB',
-              Constants::UPDATEDON_KEY => date('Y-m-d H:i:s', $file->getMTime()),
-              'ext' => $ext,
-            ];
-
-            $result[] = $image;
+          if (!empty($searchLower) && strpos(strtolower($name), $searchLower) === false) {
+            continue;
           }
+
+          $result[] = [
+            Constants::NAME_KEY => $name,
+            'url' => 'assets/' . $dir . '/' . $name,
+            'size' => $file->getSize(),
+            'size_formatted' => $file->getSize() > 1048576
+              ? round($file->getSize() / 1048576, 2) . ' MB'
+              : round($file->getSize() / 1024, 2) . ' KB',
+            'date' => $date,
+            Constants::UPDATEDON_KEY => date('Y-m-d H:i:s', $date),
+            'ext' => $ext,
+          ];
         }
       }
 
       $sorters = [
         Constants::NAME_KEY => fn($a, $b) => $sortdir === 'ASC' ? strcmp($a[Constants::NAME_KEY], $b[Constants::NAME_KEY]) : strcmp($b[Constants::NAME_KEY], $a[Constants::NAME_KEY]),
-        Constants::UPDATEDON_KEY => fn($a, $b) => $sortdir === 'ASC' ? $a[Constants::UPDATEDON_KEY] <=> $b[Constants::UPDATEDON_KEY] : $b[Constants::UPDATEDON_KEY] <=> $a[Constants::UPDATEDON_KEY],
+        'date' => fn($a, $b) => $sortdir === 'ASC' ? $a['date'] <=> $b['date'] : $b['date'] <=> $a['date'],
         'size' => fn($a, $b) => $sortdir === 'ASC' ? $a['size'] <=> $b['size'] : $b['size'] <=> $a['size'],
         'random' => fn($a, $b) => rand(-1, 1),
       ];
 
-      usort($images, $sorters[$sortby] ?? $sorters[Constants::NAME_KEY]);
+      usort($images, $sorters[$sortby] ?? $sorters['date']);
 
       $totalCount = count($result);
 
