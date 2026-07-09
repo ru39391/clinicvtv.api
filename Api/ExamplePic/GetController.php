@@ -11,23 +11,24 @@ class GetController extends CommonGetController
 
   public function index()
   {
+    $all = (int)($this->getParam('all', 0));
     $cache = (int)($this->getParam('cache', 3600));
     $dir = $this->modx->getOption('default_exmpl_pics');
     $path = $this->modx->getOption('assets_path') . $dir;
     $exts = $this->getParam('exts', 'jpg,jpeg,png');
-    $limit = (int)($this->getParam('limit', 0));
-    $params = $this->getValidPaginationParams();
     $sortby = $this->getParam('sortby', Constants::NAME_KEY);
     $sortdir = $this->getParam('sortdir', 'ASC');
+    ['page' => $page, 'perPage' => $perPage] = $this->getValidPaginationParams();
 
     $output = [];
     $images = [];
-    $cacheKey = 'images_' . md5($path . $exts . $sortby . $sortdir . $limit);
+    $cacheKey = 'images_' . md5($path . $exts . $sortby . $sortdir . $page . $perPage . $all);
     $cached = $this->modx->cacheManager->get($cacheKey);
 
     if ($cached !== null) {
       $output = $cached;
     } else {
+      $result = [];
       $allowedExtensions = array_map('trim', explode(',', $exts));
       $allowedExtensions = array_map('strtolower', $allowedExtensions);
 
@@ -47,42 +48,47 @@ class GetController extends CommonGetController
                 : round($file->getSize() / 1024, 2) . ' KB',
               Constants::UPDATEDON_KEY => date('Y-m-d H:i:s', $file->getMTime()),
               'ext' => $ext,
-              'width' => 0,
-              'height' => 0,
             ];
 
-            $imageInfo = getimagesize($file->getRealPath());
-            if ($imageInfo !== false) {
-              $image['width']  = $imageInfo[0];
-              $image['height'] = $imageInfo[1];
-            }
-
-            $images[] = $image;
+            $result[] = $image;
           }
         }
       }
 
       $sorters = [
-          'size' => fn($a, $b) => $sortdir === 'ASC' ? $a['size'] <=> $b['size'] : $b['size'] <=> $a['size'],
-          'modified' => fn($a, $b) => $sortdir === 'ASC' ? $a['modified'] <=> $b['modified'] : $b['modified'] <=> $a['modified'],
-          'random' => fn($a, $b) => rand(-1, 1),
-          'name' => fn($a, $b) => $sortdir === 'ASC' ? strcmp($a['name'], $b['name']) : strcmp($b['name'], $a['name'])
+        Constants::NAME_KEY => fn($a, $b) => $sortdir === 'ASC' ? strcmp($a[Constants::NAME_KEY], $b[Constants::NAME_KEY]) : strcmp($b[Constants::NAME_KEY], $a[Constants::NAME_KEY]),
+        Constants::UPDATEDON_KEY => fn($a, $b) => $sortdir === 'ASC' ? $a[Constants::UPDATEDON_KEY] <=> $b[Constants::UPDATEDON_KEY] : $b[Constants::UPDATEDON_KEY] <=> $a[Constants::UPDATEDON_KEY],
+        'size' => fn($a, $b) => $sortdir === 'ASC' ? $a['size'] <=> $b['size'] : $b['size'] <=> $a['size'],
+        'random' => fn($a, $b) => rand(-1, 1),
       ];
 
-      usort($images, $sorters[$sortby] ?? $sorters['name']);
+      usort($images, $sorters[$sortby] ?? $sorters[Constants::NAME_KEY]);
 
-      $totalCount = count($images);
+      $totalCount = count($result);
 
-      if ($limit > 0 && $totalCount > $limit) {
-        $images = array_slice($images, 0, $limit);
+      if ($all === 1) {
+        $perPage = $totalCount;
+        $page = 1;
+      }
+
+      $offset = ($page - 1) * $perPage;
+      $images = array_slice($result, $offset, $perPage);
+      $totalPages = ceil($totalCount / ($perPage ?: 1));
+
+      foreach ($images as &$img) {
+        $data = getimagesize($path . '/' . $img[Constants::NAME_KEY]);
+        $isImgExist = $data !== false;
+
+        $img['width'] = $isImgExist ? $data[0] : 0;
+        $img['height'] = $isImgExist ? $data[1] : 0;
       }
 
       $output = [
         'data' => [
-          //'page' => $page,
-          //'perPage' => $perPage,
+          'page' => $page,
+          'perPage' => $perPage,
           'totalCount' => $totalCount,
-          //'totalPages' => $totalPages,
+          'totalPages' => $totalPages,
           'data' => $images,
           'sortby' => $sortby,
           'sortdir' => $sortdir,
