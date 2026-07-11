@@ -44,7 +44,7 @@ trait CommonTrait
 
     $date = new \DateTime();
     $date->setTimestamp($value);
-    $date->setTimezone(new \DateTimeZone('UTC'));
+    //$date->setTimezone(new \DateTimeZone('UTC'));
 
     return $date->format('d-m-Y H:i:s');
   }
@@ -52,7 +52,7 @@ trait CommonTrait
   public function formatDate($date)
   {
     $value = $date === null ? new \DateTime() : new \DateTime($date);
-    $value->setTimezone(new \DateTimeZone('UTC'));
+    //$value->setTimezone(new \DateTimeZone('UTC'));
 
     if($date === null) {
       $value->setTime((int)$value->format('H'), 0, 0);

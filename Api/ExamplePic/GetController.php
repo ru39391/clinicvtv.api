@@ -2,12 +2,13 @@
 namespace Zoomx\Controllers\Api\ExamplePic;
 
 use Zoomx\Controllers\Common\GetController as CommonGetController;
+use Zoomx\Controllers\Common\CommonTrait;
 use Zoomx\Controllers\Common\Constants;
 use Zoomx\Controllers\Common\RequestParamsTrait;
 
 class GetController extends CommonGetController
 {
-  use RequestParamsTrait;
+  use CommonTrait, RequestParamsTrait;
 
   public function index()
   {
@@ -39,13 +40,15 @@ class GetController extends CommonGetController
       $searchLower = strtolower(trim($search ?: ''));
 
       foreach (new \DirectoryIterator($path) as $file) {
-        if ($file->isFile() && preg_match($extPattern, $file->getFilename())) {
-          $name = $file->getFilename();
-          $date = $file->getMTime();
+        $name = $file->getFilename();
 
+        if ($file->isFile() && preg_match($extPattern, $name)) {
           if (!empty($searchLower) && strpos(strtolower($name), $searchLower) === false) {
             continue;
           }
+
+          $date = $file->getMTime();
+          $timestamp = $this->formatTimestamp($date);
 
           $result[] = [
             Constants::NAME_KEY => $name,
@@ -55,8 +58,8 @@ class GetController extends CommonGetController
               ? round($file->getSize() / 1048576, 2) . ' MB'
               : round($file->getSize() / 1024, 2) . ' KB',
             'date' => $date,
-            Constants::UPDATEDON_KEY => date('Y-m-d H:i:s', $date),
-            'ext' => $ext,
+            Constants::UPDATEDON_KEY => $this->formatDate($timestamp),
+            'ext' => strtolower($file->getExtension())
           ];
         }
       }

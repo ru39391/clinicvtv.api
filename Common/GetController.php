@@ -4,8 +4,8 @@ namespace Zoomx\Controllers\Common;
 
 use Zoomx\Controllers\BaseController;
 use Zoomx\Controllers\Common\CommonTrait;
-use Zoomx\Controllers\Common\RequestParamsTrait;
 use Zoomx\Controllers\Common\Constants;
+use Zoomx\Controllers\Common\RequestParamsTrait;
 
 class GetController extends BaseController
 {
