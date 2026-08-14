@@ -1,5 +1,5 @@
 <?php
-namespace Zoomx\Controllers\Api\ExamplePic;
+namespace Zoomx\Controllers\Api\Picture;
 
 use Zoomx\Controllers\Common\GetController as CommonGetController;
 use Zoomx\Controllers\Common\CommonTrait;
@@ -13,11 +13,12 @@ class GetController extends CommonGetController
   public function index()
   {
     $all = (int)($this->getParam('all', 0));
+    $thumbs = (int)($this->getParam('thumbs', 0));
     $cache = (int)($this->getParam('cache', 3600));
-    $dir = $this->modx->getOption('default_exmpl_pics');
+    $dir = $this->getParam('dir', $this->modx->getOption('default_exmpl_pics'));
     $path = $this->modx->getOption('assets_path') . $dir;
     $exts = $this->getParam('exts', 'jpg,jpeg,png');
-    $sortby = 'date';
+    $sortby = $this->getParam('sortby', 'date');
     [
       'page' => $page,
       'perPage' => $perPage,
@@ -26,7 +27,6 @@ class GetController extends CommonGetController
     ] = $this->getValidPaginationParams();
 
     $output = [];
-    $images = [];
     $cacheKey = 'images_' . md5($path . $exts . $sortby . $sortdir . $page . $perPage . $all. $search);
     $cached = $this->modx->cacheManager->get($cacheKey);
 
@@ -52,7 +52,7 @@ class GetController extends CommonGetController
 
           $result[] = [
             Constants::NAME_KEY => $name,
-            'url' => 'assets/' . $dir . '/' . $name,
+            'url' => '/assets/' . $dir . '/' . $name,
             'size' => $file->getSize(),
             'size_formatted' => $file->getSize() > 1048576
               ? round($file->getSize() / 1048576, 2) . ' MB'
@@ -71,7 +71,7 @@ class GetController extends CommonGetController
         'random' => fn($a, $b) => rand(-1, 1),
       ];
 
-      usort($images, $sorters[$sortby] ?? $sorters['date']);
+      usort($result, $sorters[$sortby] ?? $sorters['date']);
 
       $totalCount = count($result);
 
@@ -90,6 +90,19 @@ class GetController extends CommonGetController
 
         $img['width'] = $isImgExist ? $data[0] : 0;
         $img['height'] = $isImgExist ? $data[1] : 0;
+
+        if($thumbs) {
+          $img['pics'] = [
+            'webp' => $this->modx->runSnippet('pthumb', [
+              'input' => $img['url'],
+              'options' => 'zc=1&q=100&w=514&h=440&f=webp'
+            ]),
+            'thumb' => $this->modx->runSnippet('pthumb', [
+              'input' => $img['url'],
+              'options' => 'zc=1&q=100&w=514&h=440'
+            ]),
+          ];
+        }
       }
 
       $output = [

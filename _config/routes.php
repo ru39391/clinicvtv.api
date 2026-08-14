@@ -5,7 +5,9 @@
 $router->get('api/team', Zoomx\Controllers\Api\Team\GetController::class);
 $router->get('api/team/{dept_id}', Zoomx\Controllers\Api\Team\GetController::class);
 $router->get('api/depts', Zoomx\Controllers\Api\Dept\GetController::class);
-$router->get('api/examplepics', Zoomx\Controllers\Api\ExamplePic\GetController::class);
+$router->get('api/pictures', Zoomx\Controllers\Api\Picture\GetController::class);
+
+$router->post('api/feedback', Zoomx\Controllers\Api\Feedback\CreateController::class);
 
 $routes = [
   'examples' => 'Example',

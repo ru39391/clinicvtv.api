@@ -39,9 +39,25 @@ class GetController extends BaseController
 
       if (!empty($params['search'])) {
         $search = trim($params['search']);
-        $totalQuery->where([
-          'name:LIKE' => '%' . $search . '%'
-        ]);
+        $classMeta = $this->modx->getFieldMeta($class);
+        $allowedFields = ['name', 'desc'];
+        $searchableFields = [];
+
+        foreach ($allowedFields as $field) {
+          if (isset($classMeta[$field])) {
+            $searchableFields[] = $field;
+          }
+        }
+
+        if (!empty($searchableFields)) {
+          $conditions = [];
+
+          foreach ($searchableFields as $field) {
+            $conditions[$field . ':LIKE'] = '%' . $search . '%';
+          }
+
+          $totalQuery->where($conditions, \xPDOQuery::SQL_OR);
+        }
       }
 
       $totalCount = $this->modx->getCount($class, $totalQuery);
