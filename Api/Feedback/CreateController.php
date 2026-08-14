@@ -61,6 +61,7 @@ class CreateController extends CommonController
       ];
     }
     $this->modx->cacheManager->clearCache();
+    $this->modx->runSnippet('sendFeedBackData', $data);
 
     return $output;
   }

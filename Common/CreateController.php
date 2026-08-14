@@ -29,6 +29,9 @@ class CreateController extends CommonController
       ];
     }
     $this->modx->cacheManager->clearCache();
+    if ($class === \testimonialItem::class && !$this->modx->user->isMember('Administrator')) {
+      $this->modx->runSnippet('sendTestimonialData', $output);
+    }
 
     return $output;
   }
