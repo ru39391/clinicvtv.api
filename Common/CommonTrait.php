@@ -36,6 +36,15 @@ trait CommonTrait
     return jsonx($output, $headers, $output['success'] === true ? $code : 401);
   }
 
+  public function setUnauthorizedResp()
+  {
+    $isAdmin = $this->modx->user->isMember('Administrator');
+
+    return $isAdmin
+      ? ['success' => true]
+      : ['success' => false, 'message' => 'Unauthorized'];
+  }
+
   public function formatTimestamp($value = 0)
   {
     if($value === 0) {

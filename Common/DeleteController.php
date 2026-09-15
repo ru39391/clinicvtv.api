@@ -48,6 +48,12 @@ class DeleteController extends CommonController
 
   protected function deleteData($class, $id)
   {
+    $authResp = $this->setUnauthorizedResp();
+
+    if(!$authResp['success']) {
+      return $this->setResponseData($authResp);
+    }
+
     if(!$id) {
       return $this->setResponseData([
         'success' => false,

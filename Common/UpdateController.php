@@ -50,6 +50,12 @@ class UpdateController extends CommonController
 
   protected function updateData($class, $id)
   {
+    $authResp = $this->setUnauthorizedResp();
+
+    if(!$authResp['success']) {
+      return $this->setResponseData($authResp);
+    }
+
     if(!$id) {
       return $this->setResponseData([
         'success' => false,

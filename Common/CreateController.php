@@ -43,6 +43,13 @@ class CreateController extends CommonController
 
   protected function createData($class)
   {
+    $authResp = $this->setUnauthorizedResp();
+    $success = $class === \testimonialItem::class ? false : !$authResp['success'];
+
+    if($success) {
+      return $this->setResponseData($authResp);
+    }
+
     return $this->handleData($class, Constants::CREATEDON_KEY);
   }
 }
