@@ -1,0 +1,1969 @@
+swagger: "2.0"
+basePath: /
+host: localhost:3000
+info:
+  title: Medical Clinic API
+  description: |
+    API для работы с медицинской клиникой (CMS MODX Revo).
+    Все GET-запросы публичные.
+    Все POST/PATCH/DELETE требуют роль Administrator MODX, исключения:
+    - POST /api/testimonials (создание отзыва) — публичный
+    - POST /api/feedback (обратная связь) — публичный.
+    Формат всех ошибок единый.
+  version: "1.0"
+  contact: {}
+
+schemes:
+  - http
+  - https
+
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: Внутренний механизм авторизации MODX (роль Administrator)
+
+definitions:
+  response.DeptItem:
+    description: Информация об отделении / категории услуг клиники
+    type: object
+    properties:
+      id:
+        description: ID отделения
+        type: integer
+        example: 17
+      pagetitle:
+        description: Название отделения
+        type: string
+        example: "Профилактика"
+      desc:
+        description: Описание отделения
+        type: string
+        example: "Все мероприятия для профилактики: профилактические осмотры, профессиональная гигиена полости рта и отбеливание."
+      menuindex:
+        description: Порядок отображения в меню
+        type: integer
+        example: 5
+      url:
+        description: URL-адрес страницы отделения
+        type: string
+        example: "uslugi/profilaktika-zabolevanij-zubov/"
+
+  response.PictureItem:
+    description: Информация об изображении
+    type: object
+    properties:
+      name:
+        description: Имя файла
+        type: string
+        example: "Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.jpg"
+      url:
+        description: Относительный URL изображения
+        type: string
+        example: "/assets/images/examples/Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.jpg"
+      size:
+        description: Размер файла в байтах
+        type: integer
+        example: 31117
+      size_formatted:
+        description: Размер файла в человекочитаемом формате
+        type: string
+        example: "30.39 KB"
+      date:
+        description: Дата создания/изменения файла в формате Unix timestamp
+        type: integer
+        example: 1781582767
+      updatedAt:
+        description: Дата обновления в формате ISO 8601
+        type: string
+        format: date-time
+        example: "2026-06-16T07:06:00Z"
+      ext:
+        description: Расширение файла
+        type: string
+        example: "jpg"
+      width:
+        description: Ширина изображения в пикселях
+        type: integer
+        example: 400
+      height:
+        description: Высота изображения в пикселях
+        type: integer
+        example: 240
+
+  response.TeamPics:
+    description: Изображения сотрудника (фото)
+    type: object
+    properties:
+      webp:
+        description: Путь к изображению в формате WebP
+        type: string
+        example: "/assets/components/phpthumbof/cache/pavlova-anna-andreevna.716b2ddfbee8671b7728c6d25f36b8ac.webp"
+      thumb:
+        description: Путь к миниатюре сотрудника
+        type: string
+        example: "/assets/components/phpthumbof/cache/pavlova-anna-andreevna.9f7569956ed53acb79be167ec4977333.jpg"
+
+  response.TeamItem:
+    description: Информация о сотруднике клиники
+    type: object
+    properties:
+      id:
+        description: ID сотрудника
+        type: integer
+        example: 53
+      pagetitle:
+        description: ФИО сотрудника
+        type: string
+        example: "Павлова Анна Андреевна"
+      depts_id:
+        description: Массив ID отделений, к которым относится сотрудник
+        type: array
+        items:
+          type: integer
+        example: [12, 16]
+      depts:
+        description: Список специализаций сотрудника (строка через запятую)
+        type: string
+        example: "терапевт, хирург-имплантолог"
+      introtext:
+        description: Ручное поле (редактируется через MODX)
+        type: string
+        example: "2022"
+      menuindex:
+        description: Порядок отображения в списке
+        type: integer
+        example: 10
+      url:
+        description: URL-адрес страницы сотрудника
+        type: string
+        example: "nasha-komanda/pavlova-anna-andreevna"
+      pics:
+        allOf:
+          - $ref: '#/definitions/response.TeamPics'
+        description: Изображения сотрудника
+
+  response.PricelistItem:
+    description: |
+      Информация о позиции прайс-листа.
+      Поле success внутри data — особенность бэкенда (наследие фреймворка).
+    type: object
+    properties:
+      id:
+        description: ID позиции
+        type: integer
+        example: 47
+      name:
+        description: Название услуги
+        type: string
+        example: "Профессиональная гигиена полости рта (Air Flow)"
+      price:
+        description: Цена услуги
+        type: integer
+        example: 3900
+      isMinValue:
+        description: |
+          Флаг отображения цены:
+          1 - цена указана как "от" (минимальная)
+          0 - цена фиксированная или указано максимальное значение из диапазона
+        type: integer
+        enum: [0, 1]
+        example: 1
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 17
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        example: 0
+      is_hidden:
+        description: Флаг скрытия позиции на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 0
+      createdAt:
+        description: Дата создания
+        type: string
+        format: date-time
+        example: "2026-09-15T12:28:00Z"
+      updatedAt:
+        description: Дата обновления
+        type: string
+        format: date-time
+        example: "2026-09-15T12:28:00Z"
+      success:
+        description: Статус успеха операции (присутствует в ответах create/update)
+        type: boolean
+        example: true
+
+  response.ExampleImage:
+    description: Изображение примера работы (до/после)
+    type: object
+    properties:
+      webp:
+        description: Путь к изображению в формате WebP (пустая строка, если не загружено)
+        type: string
+        example: "/assets/components/phpthumbof/cache/Sogomonyan%20do1_400x0_651.db724d516399eed3e97ae67d2d765f90.webp"
+      thumb:
+        description: Путь к миниатюре изображения (пустая строка, если не загружено)
+        type: string
+        example: "/assets/components/phpthumbof/cache/Sogomonyan%20do1_400x0_651.38436a190d8c46615fe5a9033ff3bf37.png"
+
+  response.ExampleItem:
+    description: |
+      Информация о примере работы (кейсе) клиники.
+      Поле success внутри data — особенность бэкенда (наследие фреймворка).
+    type: object
+    properties:
+      id:
+        description: ID примера
+        type: integer
+        example: 19
+      name:
+        description: Название примера (обычно "Пациент X лет")
+        type: string
+        example: "Пациент 31 год"
+      desc:
+        description: Описание примера (жалобы + что было сделано)
+        type: string
+        example: "Жалобы на эстетику улыбки. Изготовление и установка 10 виниров E-max."
+      img_before:
+        allOf:
+          - $ref: '#/definitions/response.ExampleImage'
+        description: Изображение "ДО"
+      img_after:
+        allOf:
+          - $ref: '#/definitions/response.ExampleImage'
+        description: Изображение "ПОСЛЕ"
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        example: 51
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 16
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        example: 0
+      is_hidden:
+        description: Флаг скрытия примера на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 0
+      introtext:
+        description: Computed-поле (только для чтения), формируется PHP-скриптом на основе связей
+        type: string
+        example: "Симонова Юлия Павловна"
+      createdAt:
+        description: Дата создания
+        type: string
+        format: date-time
+        example: "2025-12-01T13:10:00Z"
+      updatedAt:
+        description: Дата обновления
+        type: string
+        format: date-time
+        example: "2025-12-01T13:10:00Z"
+      success:
+        description: Статус успеха операции (присутствует в ответах create/update)
+        type: boolean
+        example: true
+
+  response.TestimonialItem:
+    description: |
+      Информация об отзыве пациента.
+      Поле success внутри data — особенность бэкенда (наследие фреймворка).
+    type: object
+    properties:
+      id:
+        description: ID отзыва
+        type: integer
+        example: 118
+      name:
+        description: Имя автора отзыва
+        type: string
+        example: "Елена Смирнова"
+      desc:
+        description: Текст отзыва
+        type: string
+        example: "Очень достойная стоматологическая клиника, доброжелательный и высококвалифицированный персонал, умеренный ценник оплаты услуг."
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        example: 44
+      rating:
+        description: Оценка (от 1 до 5)
+        type: integer
+        minimum: 1
+        maximum: 5
+        example: 5
+      is_hidden:
+        description: Флаг скрытия отзыва на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 0
+      introtext:
+        description: Computed-поле (только для чтения), формируется PHP-скриптом на основе связей
+        type: string
+        example: "Новомодных Лариса Сергеевна"
+      createdAt:
+        description: Дата создания
+        type: string
+        format: date-time
+        example: "2026-09-15T13:04:00Z"
+      updatedAt:
+        description: Дата обновления
+        type: string
+        format: date-time
+        example: "2026-09-15T13:04:00Z"
+      success:
+        description: Статус успеха операции (присутствует в ответах create/update)
+        type: boolean
+        example: true
+
+  response.FeedbackItem:
+    description: |
+      Информация о сохранённой форме обратной связи.
+      Поле success внутри data — особенность бэкенда (наследие фреймворка).
+    type: object
+    properties:
+      id:
+        description: ID записи формы
+        type: integer
+        example: 15
+      form:
+        description: Идентификатор формы
+        type: string
+        example: "form-11"
+      context_key:
+        description: Ключ контекста MODX
+        type: string
+        example: "web"
+      values:
+        description: JSON-строка с переданными значениями формы
+        type: string
+        example: "{\"src\":\"Записаться, блок соц. сетей\",\"pageId\":\"11\",\"pagetitle\":\"Контакты\",\"phone\":\"+7 (989) 900 67 89\",\"name\":\"Олег\"}"
+      ip:
+        description: IP-адрес отправителя (учитывает Cloudflare и прокси)
+        type: string
+        example: "127.0.0.1"
+      date:
+        description: Дата отправки в формате Unix timestamp
+        type: integer
+        example: 1789467069
+      encrypted:
+        description: Признак шифрования
+        type: boolean
+        example: false
+      encryption_type:
+        description: Тип шифрования
+        type: integer
+        example: 1
+      hash:
+        description: Хеш формы
+        type: string
+        example: "d93db97f4214310414a6b74136eae9d9"
+      success:
+        description: Статус успеха операции
+        type: boolean
+        example: true
+
+  request.PricelistCreateRequest:
+    description: Запрос на создание позиции прайс-листа
+    type: object
+    required:
+      - name
+      - price
+      - dept_id
+    properties:
+      name:
+        description: Название услуги
+        type: string
+        example: "Профессиональная гигиена полости рта (Air Flow)"
+      price:
+        description: Цена услуги
+        type: integer
+        minimum: 0
+        example: 3900
+      isMinValue:
+        description: Флаг "от" (1 - цена минимальная, 0 - фиксированная)
+        type: integer
+        enum: [0, 1]
+        default: 1
+        example: 1
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 17
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        default: 0
+        example: 0
+      is_hidden:
+        description: Флаг скрытия позиции на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        default: 0
+        example: 0
+
+  request.PricelistUpdateRequest:
+    description: |
+      Запрос на частичное обновление позиции прайс-листа (PATCH).
+      Обязательные поля: name, price. Остальные поля опциональны.
+    type: object
+    required:
+      - name
+      - price
+    properties:
+      name:
+        description: Название услуги (обязательно)
+        type: string
+        example: "Лечение среднего кариеса с пломбировкой"
+      price:
+        description: Цена услуги (обязательно)
+        type: integer
+        minimum: 0
+        example: 6050
+      isMinValue:
+        description: Флаг "от" (1 - цена минимальная, 0 - фиксированная)
+        type: integer
+        enum: [0, 1]
+        example: 0
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 12
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        example: 0
+      is_hidden:
+        description: Флаг скрытия позиции на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 1
+
+  request.ExampleCreateRequest:
+    description: |
+      Запрос на создание примера работы (application/json).
+      Изображения передаются как пути из галереи, полученной через /api/pictures.
+    type: object
+    required:
+      - name
+      - desc
+      - spec_id
+      - dept_id
+    properties:
+      name:
+        description: Название примера (например, "Пациент 31 год")
+        type: string
+        example: "Пациент 31 год"
+      desc:
+        description: Описание примера (жалобы + что было сделано)
+        type: string
+        example: "Жалобы на эстетику улыбки. Изготовление и установка 10 виниров E-max."
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        example: 51
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 16
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        default: 0
+        example: 0
+      is_hidden:
+        description: Флаг скрытия примера на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        default: 0
+        example: 0
+      img_before:
+        description: Путь к изображению "ДО" (из галереи /api/pictures)
+        type: string
+        example: "/assets/images/examples/Proshenkov_otbelivanie_2_do_400x0_3c9.jpg"
+      img_after:
+        description: Путь к изображению "ПОСЛЕ" (из галереи /api/pictures)
+        type: string
+        example: "/assets/images/examples/Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.jpg"
+
+  request.ExampleUpdateRequest:
+    description: |
+      Запрос на частичное обновление примера работы (application/json).
+      Обязательные поля: name, desc. Остальные поля опциональны.
+      При отсутствии img_before/img_after старые изображения сохраняются.
+    type: object
+    required:
+      - name
+      - desc
+    properties:
+      name:
+        description: Название примера (обязательно)
+        type: string
+        example: "Пациент 31 год"
+      desc:
+        description: Описание примера (обязательно)
+        type: string
+        example: "Жалобы на эстетику улыбки. Изготовление и установка 10 виниров E-max."
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        example: 51
+      dept_id:
+        description: ID отделения (категории)
+        type: integer
+        example: 16
+      subdept_id:
+        description: ID подкатегории (0 - если не указана)
+        type: integer
+        example: 0
+      is_hidden:
+        description: Флаг скрытия примера на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 1
+      img_before:
+        description: Новый путь к изображению "ДО". Если не передан — старое изображение сохраняется.
+        type: string
+        example: "/assets/images/examples/Proshenkov_otbelivanie_2_do_400x0_3c9.jpg"
+      img_after:
+        description: Новый путь к изображению "ПОСЛЕ". Если не передан — старое изображение сохраняется.
+        type: string
+        example: "/assets/images/examples/Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.jpg"
+
+  request.TestimonialCreateRequest:
+    description: Запрос на создание отзыва (application/json)
+    type: object
+    required:
+      - name
+      - desc
+      - rating
+    properties:
+      name:
+        description: Имя автора отзыва
+        type: string
+        example: "Елена Смирнова"
+      desc:
+        description: Текст отзыва
+        type: string
+        example: "Очень достойная стоматологическая клиника, доброжелательный и высококвалифицированный персонал, умеренный ценник оплаты услуг."
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        default: 0
+        example: 44
+      rating:
+        description: Оценка (от 1 до 5)
+        type: integer
+        minimum: 1
+        maximum: 5
+        example: 5
+      is_hidden:
+        description: Флаг скрытия отзыва на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        default: 0
+        example: 0
+
+  request.TestimonialUpdateRequest:
+    description: |
+      Запрос на частичное обновление отзыва (PATCH).
+      Обязательные поля: name, desc. Остальные поля опциональны.
+    type: object
+    required:
+      - name
+      - desc
+    properties:
+      name:
+        description: Имя автора отзыва (обязательно)
+        type: string
+        example: "Елена Смирнова"
+      desc:
+        description: Текст отзыва (обязательно)
+        type: string
+        example: "Прекрасная клиника! Врачи — настоящие профессионалы, лечение прошло безболезненно и комфортно."
+      spec_id:
+        description: ID специалиста; 0 — валидное значение «без привязки к врачу»
+        type: integer
+        example: 44
+      rating:
+        description: Оценка (от 1 до 5)
+        type: integer
+        minimum: 1
+        maximum: 5
+        example: 5
+      is_hidden:
+        description: Флаг скрытия отзыва на сайте. Принимает только 0 или 1
+        type: integer
+        enum: [0, 1]
+        example: 1
+
+  request.FeedbackCreateRequest:
+    description: Данные формы обратной связи (произвольный набор полей)
+    type: object
+    properties:
+      form:
+        description: Идентификатор формы
+        type: string
+        example: "form-11"
+      context_key:
+        description: Ключ контекста MODX
+        type: string
+        example: "web"
+      values:
+        description: JSON-строка со значениями полей формы
+        type: string
+        example: "{\"src\":\"Записаться, блок соц. сетей\",\"pageId\":\"11\",\"pagetitle\":\"Контакты\",\"phone\":\"+7 (989) 900 67 89\",\"name\":\"Олег\"}"
+
+  response.Meta:
+    description: Метаданные выполнения запроса
+    type: object
+    properties:
+      total_time:
+        description: Общее время выполнения запроса
+        type: string
+        example: "0.1314 s"
+      query_time:
+        description: Время выполнения SQL-запросов
+        type: string
+        example: "0.0047 s"
+      php_time:
+        description: Время выполнения PHP-кода
+        type: string
+        example: "0.1267 s"
+      queries:
+        description: Количество выполненных SQL-запросов
+        type: integer
+        example: 13
+      source:
+        description: Источник данных (cache / database / filesystem)
+        type: string
+        example: "cache"
+      memory:
+        description: Использованная память
+        type: string
+        example: "10 240 KB"
+
+  response.TestimonialPaginationData:
+    description: Данные пагинации списка отзывов
+    type: object
+    properties:
+      page:
+        description: Текущая страница
+        type: integer
+        example: 1
+      perPage:
+        description: Количество элементов на странице
+        type: integer
+        example: 10
+      totalCount:
+        description: Общее количество отзывов
+        type: integer
+        example: 109
+      totalPages:
+        description: Общее количество страниц
+        type: integer
+        example: 11
+      data:
+        description: Массив отзывов
+        type: array
+        items:
+          $ref: '#/definitions/response.TestimonialItem'
+      sortby:
+        description: Поле сортировки
+        type: string
+        example: "updatedAt"
+      sortdir:
+        description: Направление сортировки
+        type: string
+        enum: ["ASC", "DESC"]
+        example: "DESC"
+      search:
+        description: Поисковый запрос
+        type: string
+        example: null
+
+  response.TestimonialListData:
+    description: Обёртка данных ответа /api/testimonials
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/response.TestimonialPaginationData'
+
+  response.ExamplePaginationData:
+    description: Данные пагинации списка примеров работ
+    type: object
+    properties:
+      page:
+        description: Текущая страница
+        type: integer
+        example: 1
+      perPage:
+        description: Количество элементов на странице
+        type: integer
+        example: 10
+      totalCount:
+        description: Общее количество примеров
+        type: integer
+        example: 21
+      totalPages:
+        description: Общее количество страниц
+        type: integer
+        example: 3
+      data:
+        description: Массив примеров работ
+        type: array
+        items:
+          $ref: '#/definitions/response.ExampleItem'
+      sortby:
+        description: Поле сортировки
+        type: string
+        example: "updatedAt"
+      sortdir:
+        description: Направление сортировки
+        type: string
+        enum: ["ASC", "DESC"]
+        example: "DESC"
+      search:
+        description: Поисковый запрос
+        type: string
+        example: null
+
+  response.ExampleListData:
+    description: Обёртка данных ответа /api/examples
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/response.ExamplePaginationData'
+
+  response.PricelistPaginationData:
+    description: Данные пагинации списка позиций прайс-листа
+    type: object
+    properties:
+      page:
+        description: Текущая страница
+        type: integer
+        example: 1
+      perPage:
+        description: Количество элементов на странице
+        type: integer
+        example: 10
+      totalCount:
+        description: Общее количество позиций
+        type: integer
+        example: 39
+      totalPages:
+        description: Общее количество страниц
+        type: integer
+        example: 4
+      data:
+        description: Массив позиций прайс-листа
+        type: array
+        items:
+          $ref: '#/definitions/response.PricelistItem'
+      sortby:
+        description: Поле сортировки
+        type: string
+        example: "updatedAt"
+      sortdir:
+        description: Направление сортировки
+        type: string
+        enum: ["ASC", "DESC"]
+        example: "DESC"
+      search:
+        description: Поисковый запрос
+        type: string
+        example: null
+
+  response.PricelistListData:
+    description: Обёртка данных ответа /api/pricelist
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/response.PricelistPaginationData'
+
+  response.PicturePaginationData:
+    description: Данные пагинации списка изображений
+    type: object
+    properties:
+      page:
+        description: Текущая страница
+        type: integer
+        example: 1
+      perPage:
+        description: Количество элементов на странице
+        type: integer
+        example: 10
+      totalCount:
+        description: Общее количество изображений
+        type: integer
+        example: 50
+      totalPages:
+        description: Общее количество страниц
+        type: integer
+        example: 5
+      data:
+        description: Массив изображений
+        type: array
+        items:
+          $ref: '#/definitions/response.PictureItem'
+      sortby:
+        description: Поле сортировки
+        type: string
+        enum: ["name", "date", "size", "random"]
+        example: "date"
+      sortdir:
+        description: Направление сортировки
+        type: string
+        enum: ["ASC", "DESC"]
+        example: "DESC"
+      cache:
+        description: Статус кеша (cached / fresh)
+        type: string
+        example: "cached"
+
+  response.PictureListData:
+    description: Обёртка данных ответа /api/pictures
+    type: object
+    properties:
+      data:
+        $ref: '#/definitions/response.PicturePaginationData'
+
+  response.DeptListResponse:
+    description: Успешный ответ со списком отделений
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        description: Массив отделений
+        type: array
+        items:
+          $ref: '#/definitions/response.DeptItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.PictureListResponse:
+    description: Успешный ответ со списком изображений
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.PictureListData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.TeamListResponse:
+    description: Успешный ответ со списком сотрудников
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        description: Массив сотрудников
+        type: array
+        items:
+          $ref: '#/definitions/response.TeamItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.PricelistListResponse:
+    description: Успешный ответ со списком позиций прайс-листа
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.PricelistListData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.PricelistSingleResponse:
+    description: Успешный ответ с одной позицией прайс-листа (создание/обновление)
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.PricelistItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.PricelistDeleteData:
+    description: Данные удалённой позиции прайс-листа
+    type: object
+    properties:
+      id:
+        description: ID удалённой позиции
+        type: integer
+        example: 47
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+
+  response.PricelistDeleteResponse:
+    description: Успешный ответ при удалении позиции прайс-листа
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.PricelistDeleteData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.ExampleListResponse:
+    description: Успешный ответ со списком примеров работ
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.ExampleListData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.ExampleSingleResponse:
+    description: Успешный ответ с одним примером работы (создание/обновление)
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.ExampleItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.ExampleDeleteData:
+    description: Данные удалённого примера работы
+    type: object
+    properties:
+      id:
+        description: ID удалённого примера
+        type: integer
+        example: 24
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+
+  response.ExampleDeleteResponse:
+    description: Успешный ответ при удалении примера работы
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.ExampleDeleteData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.TestimonialListResponse:
+    description: Успешный ответ со списком отзывов
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.TestimonialListData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.TestimonialSingleResponse:
+    description: Успешный ответ с одним отзывом (создание/обновление)
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.TestimonialItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.TestimonialDeleteData:
+    description: Данные удалённого отзыва
+    type: object
+    properties:
+      id:
+        description: ID удалённого отзыва
+        type: integer
+        example: 118
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+
+  response.TestimonialDeleteResponse:
+    description: Успешный ответ при удалении отзыва
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.TestimonialDeleteData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.FeedbackCreateResponse:
+    description: Успешный ответ при сохранении формы обратной связи
+    type: object
+    properties:
+      success:
+        description: Статус успеха
+        type: boolean
+        example: true
+      data:
+        $ref: '#/definitions/response.FeedbackItem'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+  response.ErrorData:
+    description: Данные ошибки
+    type: object
+    properties:
+      success:
+        description: Статус успеха операции (всегда false)
+        type: boolean
+        example: false
+      message:
+        description: Сообщение об ошибке
+        type: string
+        example: "Unauthorized"
+      debug:
+        description: Отладочная информация
+        type: object
+        properties:
+          message:
+            description: Детальное сообщение об ошибке
+            type: string
+            example: "Authorization header missing or invalid"
+
+  response.ErrorResponse:
+    description: Стандартный ответ об ошибке
+    type: object
+    properties:
+      success:
+        description: Статус успеха обёртки (всегда true — особенность бэкенда)
+        type: boolean
+        example: false
+      data:
+        $ref: '#/definitions/response.ErrorData'
+      meta:
+        $ref: '#/definitions/response.Meta'
+
+paths:
+  /api/depts:
+    get:
+      summary: Получение списка отделений клиники
+      description: Возвращает список всех отделений / категорий услуг медицинской клиники
+      tags:
+        - Отделения
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Список отделений
+          schema:
+            $ref: '#/definitions/response.DeptListResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/pictures:
+    get:
+      summary: Получение списка изображений
+      description: |
+        Возвращает список изображений из указанной директории с поддержкой пагинации,
+        сортировки, поиска и генерации миниатюр.
+      tags:
+        - Изображения
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: all
+          description: Вернуть все изображения без пагинации (0 - с пагинацией, 1 - все)
+          type: integer
+          enum: [0, 1]
+          default: 0
+        - in: query
+          name: thumbs
+          description: Генерировать миниатюры (0 - нет, 1 - да)
+          type: integer
+          enum: [0, 1]
+          default: 0
+        - in: query
+          name: cache
+          description: Время кеширования результата в секундах
+          type: integer
+          default: 3600
+        - in: query
+          name: dir
+          description: Директория с изображениями (по умолчанию берётся из настроек системы)
+          type: string
+        - in: query
+          name: exts
+          description: Разрешённые расширения файлов (через запятую)
+          type: string
+          default: "jpg,jpeg,png"
+        - in: query
+          name: sortby
+          description: Поле для сортировки
+          type: string
+          enum: ["name", "date", "size", "random"]
+          default: "date"
+        - in: query
+          name: page
+          description: Номер страницы. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 1
+        - in: query
+          name: perPage
+          description: Количество элементов на странице. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 10
+        - in: query
+          name: search
+          description: Поиск по имени файла
+          type: string
+        - in: query
+          name: sortdir
+          description: Направление сортировки
+          type: string
+          enum: ["ASC", "DESC"]
+          default: "DESC"
+      responses:
+        "200":
+          description: Список изображений
+          schema:
+            $ref: '#/definitions/response.PictureListResponse'
+        "400":
+          description: Неверные параметры
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/team:
+    get:
+      summary: Получение списка сотрудников клиники
+      description: Возвращает список всех сотрудников клиники с фильтрацией по отделению
+      tags:
+        - Сотрудники
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: dept_id
+          description: Фильтр по ID отдела (отделения). Нечисловые значения игнорируются
+          type: integer
+      responses:
+        "200":
+          description: Список сотрудников
+          schema:
+            $ref: '#/definitions/response.TeamListResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/pricelist:
+    get:
+      summary: Получение списка позиций прайс-листа
+      description: |
+        Возвращает список позиций прайс-листа с поддержкой пагинации,
+        сортировки, поиска и фильтрации по отделению, специалисту и статусу скрытия.
+      tags:
+        - Прайс-лист
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: page
+          description: Номер страницы. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 1
+        - in: query
+          name: perPage
+          description: Количество элементов на странице. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 10
+        - in: query
+          name: sortby
+          description: Поле для сортировки
+          type: string
+          enum: ["id", "name", "price", "updatedAt", "createdAt"]
+          default: "updatedAt"
+        - in: query
+          name: sortdir
+          description: Направление сортировки
+          type: string
+          enum: ["ASC", "DESC"]
+          default: "DESC"
+        - in: query
+          name: search
+          description: Поиск по name и desc
+          type: string
+        - in: query
+          name: spec_id
+          description: Фильтр по ID специалиста. Нечисловые значения игнорируются
+          type: integer
+        - in: query
+          name: dept_id
+          description: Фильтр по ID отделения. Нечисловые значения игнорируются
+          type: integer
+        - in: query
+          name: is_hidden
+          description: Фильтр по статусу скрытия. Принимает только 0 или 1
+          type: integer
+          enum: [0, 1]
+      responses:
+        "200":
+          description: Список позиций
+          schema:
+            $ref: '#/definitions/response.PricelistListResponse'
+        "400":
+          description: Неверные параметры
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    post:
+      summary: Создание новой позиции прайс-листа
+      description: Добавляет новую услугу в прайс-лист клиники (требуется роль Administrator)
+      tags:
+        - Прайс-лист
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: body
+          name: request
+          description: Данные для создания позиции
+          required: true
+          schema:
+            $ref: '#/definitions/request.PricelistCreateRequest'
+      responses:
+        "200":
+          description: Позиция создана
+          schema:
+            $ref: '#/definitions/response.PricelistSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 47,
+                  "name": "Профессиональная гигиена полости рта (Air Flow)",
+                  "price": 3900,
+                  "isMinValue": 1,
+                  "dept_id": 17,
+                  "subdept_id": 0,
+                  "is_hidden": 0,
+                  "createdAt": "2026-09-15T12:28:00Z",
+                  "updatedAt": "2026-09-15T12:28:00Z",
+                  "success": true
+                },
+                "meta": { "total_time": "0.2633 s", "query_time": "0.0036 s", "php_time": "0.2597 s", "queries": 7, "source": "cache", "memory": "10 240 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": { "success": false, "message": "Unauthorized" },
+                "meta": { "total_time": "0.0722 s", "query_time": "0.0010 s", "php_time": "0.0713 s", "queries": 3, "source": "cache", "memory": "10 240 KB" }
+              }
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/pricelist/{id}:
+    patch:
+      summary: Частичное обновление позиции прайс-листа
+      description: |
+        Обновляет существующую позицию прайс-листа (требуется роль Administrator).
+        Обязательные поля: name, price. Остальные поля опциональны.
+      tags:
+        - Прайс-лист
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID позиции прайс-листа
+          required: true
+          type: integer
+        - in: body
+          name: request
+          description: Данные для обновления позиции
+          required: true
+          schema:
+            $ref: '#/definitions/request.PricelistUpdateRequest'
+      responses:
+        "200":
+          description: Позиция обновлена
+          schema:
+            $ref: '#/definitions/response.PricelistSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 47,
+                  "name": "Лечение среднего кариеса с пломбировкой",
+                  "price": 6050,
+                  "isMinValue": 0,
+                  "dept_id": 12,
+                  "subdept_id": 0,
+                  "is_hidden": 1,
+                  "createdAt": "2026-09-15T15:28:00Z",
+                  "updatedAt": "2026-09-15T12:29:00Z",
+                  "success": true
+                },
+                "meta": { "total_time": "0.2802 s", "query_time": "0.0065 s", "php_time": "0.2737 s", "queries": 16, "source": "cache", "memory": "10 240 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Позиция не найдена
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    delete:
+      summary: Удаление позиции прайс-листа
+      description: Удаляет позицию прайс-листа (требуется роль Administrator)
+      tags:
+        - Прайс-лист
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID позиции прайс-листа
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Позиция удалена
+          schema:
+            $ref: '#/definitions/response.PricelistDeleteResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": { "id": 47, "success": true },
+                "meta": { "total_time": "0.1508 s", "query_time": "0.0040 s", "php_time": "0.1468 s", "queries": 16, "source": "cache", "memory": "10 240 KB" }
+              }
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Позиция не найдена
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/examples:
+    get:
+      summary: Получение списка примеров работ
+      description: |
+        Возвращает список примеров работ (кейсов) клиники с поддержкой пагинации,
+        сортировки, поиска и фильтрации по специалисту, отделению и статусу скрытия.
+      tags:
+        - Примеры работ
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: page
+          description: Номер страницы. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 1
+        - in: query
+          name: perPage
+          description: Количество элементов на странице. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 10
+        - in: query
+          name: sortby
+          description: Поле для сортировки
+          type: string
+          enum: ["id", "name", "updatedAt", "createdAt"]
+          default: "updatedAt"
+        - in: query
+          name: sortdir
+          description: Направление сортировки
+          type: string
+          enum: ["ASC", "DESC"]
+          default: "DESC"
+        - in: query
+          name: search
+          description: Поиск по name и desc
+          type: string
+        - in: query
+          name: spec_id
+          description: Фильтр по ID специалиста. Нечисловые значения игнорируются
+          type: integer
+        - in: query
+          name: dept_id
+          description: Фильтр по ID отделения. Нечисловые значения игнорируются
+          type: integer
+        - in: query
+          name: is_hidden
+          description: Фильтр по статусу скрытия. Принимает только 0 или 1
+          type: integer
+          enum: [0, 1]
+      responses:
+        "200":
+          description: Список примеров работ
+          schema:
+            $ref: '#/definitions/response.ExampleListResponse'
+        "400":
+          description: Неверные параметры
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    post:
+      summary: Создание нового примера работы
+      description: |
+        Добавляет новый пример работы (кейс) в портфолио клиники (требуется роль Administrator).
+        Изображения передаются как пути из галереи, полученной через /api/pictures.
+      tags:
+        - Примеры работ
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: body
+          name: request
+          description: Данные для создания примера
+          required: true
+          schema:
+            $ref: '#/definitions/request.ExampleCreateRequest'
+      responses:
+        "200":
+          description: Пример создан
+          schema:
+            $ref: '#/definitions/response.ExampleSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 24,
+                  "name": "Пример 1",
+                  "desc": "Описание примера",
+                  "img_before": { "webp": "", "thumb": "" },
+                  "img_after": { "webp": "", "thumb": "" },
+                  "spec_id": 43,
+                  "dept_id": 17,
+                  "subdept_id": 0,
+                  "is_hidden": 0,
+                  "createdAt": "2026-09-15T12:46:00Z",
+                  "updatedAt": "2026-09-15T12:46:00Z",
+                  "success": true,
+                  "introtext": "Симонов Дмитрий Викторович"
+                },
+                "meta": { "total_time": "0.1230 s", "query_time": "0.0058 s", "php_time": "0.1172 s", "queries": 20, "source": "cache", "memory": "10 240 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/examples/{id}:
+    patch:
+      summary: Частичное обновление примера работы
+      description: |
+        Обновляет пример работы (PATCH, application/json, требуется роль Administrator).
+        Обязательные поля: name, desc. Остальные поля опциональны.
+        При отсутствии img_before/img_after старые изображения сохраняются.
+      tags:
+        - Примеры работ
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID примера работы
+          required: true
+          type: integer
+        - in: body
+          name: request
+          description: Данные для обновления примера
+          required: true
+          schema:
+            $ref: '#/definitions/request.ExampleUpdateRequest'
+      responses:
+        "200":
+          description: Пример обновлён
+          schema:
+            $ref: '#/definitions/response.ExampleSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 24,
+                  "name": "Пример 1",
+                  "desc": "Описание примера",
+                  "img_before": { "webp": "/assets/components/phpthumbof/cache/Proshenkov_otbelivanie_2_do_400x0_3c9.db724d516399eed3e97ae67d2d765f90.webp", "thumb": "/assets/components/phpthumbof/cache/Proshenkov_otbelivanie_2_do_400x0_3c9.6dc1f384ba2b2146e45f1a69ee5dcdff.jpg" },
+                  "img_after": { "webp": "/assets/components/phpthumbof/cache/Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.db724d516399eed3e97ae67d2d765f90.webp", "thumb": "/assets/components/phpthumbof/cache/Poshenkov_otbelivanie_zoom_posle_1_400x0_3c9.6dc1f384ba2b2146e45f1a69ee5dcdff.jpg" },
+                  "spec_id": 43,
+                  "dept_id": 17,
+                  "subdept_id": 0,
+                  "is_hidden": 0,
+                  "createdAt": "2026-09-15T12:46:00Z",
+                  "updatedAt": "2026-09-15T12:46:00Z",
+                  "success": true,
+                  "introtext": "Симонов Дмитрий Викторович"
+                },
+                "meta": { "total_time": "0.2044 s", "query_time": "0.0062 s", "php_time": "0.1982 s", "queries": 21, "source": "cache", "memory": "12 288 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Пример не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён (GET не поддерживается)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    delete:
+      summary: Удаление примера работы
+      description: Удаляет пример работы (кейс) из портфолио клиники (требуется роль Administrator)
+      tags:
+        - Примеры работ
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID примера работы
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Пример удалён
+          schema:
+            $ref: '#/definitions/response.ExampleDeleteResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": { "id": 24, "success": true },
+                "meta": { "total_time": "0.1603 s", "query_time": "0.0047 s", "php_time": "0.1556 s", "queries": 16, "source": "cache", "memory": "10 240 KB" }
+              }
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Пример не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён (GET не поддерживается)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/testimonials:
+    get:
+      summary: Получение списка отзывов
+      description: |
+        Возвращает список отзывов пациентов с поддержкой пагинации,
+        сортировки, поиска и фильтрации по специалисту, рейтингу и статусу скрытия.
+      tags:
+        - Отзывы
+      produces:
+        - application/json
+      parameters:
+        - in: query
+          name: page
+          description: Номер страницы. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 1
+        - in: query
+          name: perPage
+          description: Количество элементов на странице. Нечисловые значения приводятся к дефолтному значению
+          type: integer
+          default: 10
+        - in: query
+          name: sortby
+          description: Поле для сортировки
+          type: string
+          enum: ["id", "name", "rating", "updatedAt", "createdAt"]
+          default: "updatedAt"
+        - in: query
+          name: sortdir
+          description: Направление сортировки
+          type: string
+          enum: ["ASC", "DESC"]
+          default: "DESC"
+        - in: query
+          name: search
+          description: Поиск по name и desc
+          type: string
+        - in: query
+          name: spec_id
+          description: Фильтр по ID специалиста. Нечисловые значения игнорируются
+          type: integer
+        - in: query
+          name: spec_ids
+          description: Множественный фильтр по ID специалистов через запятую. Нечисловые значения игнорируются
+          type: string
+          example: "53,50,47"
+        - in: query
+          name: rating
+          description: Фильтр по оценке (1-5)
+          type: integer
+          minimum: 1
+          maximum: 5
+        - in: query
+          name: is_hidden
+          description: Фильтр по статусу скрытия. Принимает только 0 или 1
+          type: integer
+          enum: [0, 1]
+      responses:
+        "200":
+          description: Список отзывов
+          schema:
+            $ref: '#/definitions/response.TestimonialListResponse'
+        "400":
+          description: Неверные параметры
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    post:
+      summary: Создание нового отзыва
+      description: Публичный эндпоинт (без авторизации). Добавляет новый отзыв пациента
+      tags:
+        - Отзывы
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: request
+          description: Данные для создания отзыва
+          required: true
+          schema:
+            $ref: '#/definitions/request.TestimonialCreateRequest'
+      responses:
+        "200":
+          description: Отзыв создан
+          schema:
+            $ref: '#/definitions/response.TestimonialSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 118,
+                  "name": "Елена Смирнова",
+                  "desc": "Очень достойная стоматологическая клиника, доброжелательный и высококвалифицированный персонал, умеренный ценник оплаты услуг.",
+                  "spec_id": 44,
+                  "rating": 5,
+                  "is_hidden": 0,
+                  "createdAt": "2026-09-15T13:04:00Z",
+                  "updatedAt": "2026-09-15T13:04:00Z",
+                  "success": true,
+                  "introtext": "Новомодных Лариса Сергеевна"
+                },
+                "meta": { "total_time": "0.1314 s", "query_time": "0.0047 s", "php_time": "0.1267 s", "queries": 13, "source": "cache", "memory": "10 240 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/testimonials/{id}:
+    patch:
+      summary: Частичное обновление отзыва
+      description: |
+        Обновляет отзыв (PATCH, application/json, требуется роль Administrator).
+        Обязательные поля: name, desc. Остальные поля опциональны.
+      tags:
+        - Отзывы
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID отзыва
+          required: true
+          type: integer
+        - in: body
+          name: request
+          description: Данные для обновления отзыва
+          required: true
+          schema:
+            $ref: '#/definitions/request.TestimonialUpdateRequest'
+      responses:
+        "200":
+          description: Отзыв обновлён
+          schema:
+            $ref: '#/definitions/response.TestimonialSingleResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 118,
+                  "name": "Елена Смирнова",
+                  "desc": "Прекрасная клиника! Врачи — настоящие профессионалы, лечение прошло безболезненно и комфортно.",
+                  "spec_id": 44,
+                  "rating": 5,
+                  "is_hidden": 0,
+                  "createdAt": "2026-09-15T16:04:00Z",
+                  "updatedAt": "2026-09-15T13:06:00Z",
+                  "introtext": "Новомодных Лариса Сергеевна",
+                  "success": true
+                },
+                "meta": { "total_time": "0.1064 s", "query_time": "0.0048 s", "php_time": "0.1016 s", "queries": 14, "source": "cache", "memory": "10 240 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Отзыв не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён (GET не поддерживается)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+    delete:
+      summary: Удаление отзыва
+      description: Удаляет отзыв пациента (требуется роль Administrator)
+      tags:
+        - Отзывы
+      produces:
+        - application/json
+      security:
+        - BearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          description: ID отзыва
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Отзыв удалён
+          schema:
+            $ref: '#/definitions/response.TestimonialDeleteResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": { "id": 118, "success": true },
+                "meta": { "total_time": "0.1635 s", "query_time": "0.0048 s", "php_time": "0.1587 s", "queries": 16, "source": "cache", "memory": "10 240 KB" }
+              }
+        "401":
+          description: Не авторизован (требуется роль Administrator)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "404":
+          description: Отзыв не найден
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "405":
+          description: Метод не разрешён (GET не поддерживается)
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+
+  /api/feedback:
+    post:
+      summary: Отправка формы обратной связи
+      description: |
+        Публичный эндпоинт (без авторизации).
+        Сохраняет данные в FormItForm, определяет IP-адрес с учётом Cloudflare и прокси.
+      tags:
+        - Обратная связь
+      consumes:
+        - application/json
+      produces:
+        - application/json
+      parameters:
+        - in: body
+          name: request
+          description: Данные формы обратной связи
+          required: true
+          schema:
+            $ref: '#/definitions/request.FeedbackCreateRequest'
+      responses:
+        "200":
+          description: Форма сохранена
+          schema:
+            $ref: '#/definitions/response.FeedbackCreateResponse'
+          examples:
+            application/json:
+              {
+                "success": true,
+                "data": {
+                  "id": 15,
+                  "form": "form-11",
+                  "context_key": "web",
+                  "values": "{\"src\":\"Записаться, блок соц. сетей\",\"pageId\":\"11\",\"pagetitle\":\"Контакты\",\"phone\":\"+7 (999) 999 88 77\",\"name\":\"Клиент\"}",
+                  "ip": "127.0.0.1",
+                  "date": 1789467069,
+                  "encrypted": false,
+                  "encryption_type": 1,
+                  "hash": "d93db97f4214310414a6b74136eae9d9",
+                  "success": true
+                },
+                "meta": { "total_time": "0.9044 s", "query_time": "0.0037 s", "php_time": "0.9007 s", "queries": 9, "source": "cache", "memory": "12 288 KB" }
+              }
+        "400":
+          description: Ошибка валидации
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка
+          schema:
+            $ref: '#/definitions/response.ErrorResponse'
